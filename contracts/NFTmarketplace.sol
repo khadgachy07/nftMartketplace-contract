@@ -10,18 +10,22 @@ import "@openzeppelin/contracts-upgradeable@4.8.1/proxy/utils/Initializable.sol"
 import "@openzeppelin/contracts-upgradeable@4.8.1/proxy/utils/UUPSUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable@4.8.1/security/ReentrancyGuardUpgradeable.sol";
 
+import "./PriceFeed.sol";
+
 contract NFTMartketplace is
     Initializable,
     AccessControlUpgradeable,
     UUPSUpgradeable,
     PausableUpgradeable,
-    ReentrancyGuardUpgradeable
+    ReentrancyGuardUpgradeable,
+    PriceFeed
 {
     using CountersUpgradeable for CountersUpgradeable.Counter;
 
     CountersUpgradeable.Counter private _marketItemIds;
     CountersUpgradeable.Counter private _nftSold;
     CountersUpgradeable.Counter private _nftCanceled;
+
 
     bytes32 private constant OPERATOR_ROLE = keccak256("OPERATOR_ROLE");
 
@@ -98,6 +102,7 @@ contract NFTMartketplace is
         _;
     }
 
+
     constructor() {
         _disableInitializers();
     }
@@ -153,6 +158,17 @@ contract NFTMartketplace is
     function setListingFee() private{
         listingFee = 0.005 ether;
     }
+
+    function getNFTPrice(uint256 _marketItemId) public view returns (uint256){
+        uint result = PriceFeed.getEthPrice() * NFTs[_marketItemId].price;
+        return result/1000000000000000000;
+    }
+
+    // function getNFT(uint _marketItemId)private view returns(uint256){
+    //     return NFTs[_marketItemId].price;
+    // }
+
+
 
     function listNFTforSale(
         address _nftAddress,
@@ -307,4 +323,5 @@ contract NFTMartketplace is
 }
 
 // proxy contract --- 0x9f50be47c34e5cc6a27b0ec885ecec4335a95740
-// implementation contract ---- 0xf2fdcdea499167ef5cbb0f8ce1a581cb49940f22
+// implementation contract ---- 0x0aD767bA7A119A941840f43e34C1DD3756617C5D
+
