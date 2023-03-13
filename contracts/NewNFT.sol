@@ -70,3 +70,5 @@ contract NewNFT is ERC721, ERC2981, Ownable {
 
 
 }
+
+// Contract Address ---- 0x6bBD0c46383Ef8439a487A58b99224d9305b3108

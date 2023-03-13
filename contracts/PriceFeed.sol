@@ -7,7 +7,7 @@ abstract contract PriceFeed {
 
     
     function getEthPrice()public view returns(uint){
-        (,int price,,,) = AggregatorV3Interface(0xD4a33860578De61DBAbDc8BFdb98FD742fA7028e).latestRoundData();
+        (,int price,,,) = AggregatorV3Interface(0x694AA1769357215DE4FAC081bf1f309aDC325306).latestRoundData();
         return uint(price);
     }
 

@@ -164,10 +164,7 @@ contract NFTMartketplace is
         return result/1000000000000000000;
     }
 
-    // function getNFT(uint _marketItemId)private view returns(uint256){
-    //     return NFTs[_marketItemId].price;
-    // }
-
+ 
 
 
     function listNFTforSale(
@@ -218,15 +215,14 @@ contract NFTMartketplace is
             "Only seller or Operator can cancel the sale"
         );
         _nftCanceled.increment();
-        nft.seller = address(0);
-        nft.owner = msg.sender;
+        nft.owner = nft.seller;
         nft.price = 0;
         nft.nftState = State.Cancelled;
         NFTs[_marketItemId] = nft;
         forSale[_nftAddress][nft.tokenId] = false;
         IERC721Upgradeable(_nftAddress).transferFrom(
             address(this),
-            msg.sender,
+            nft.seller,
             nft.tokenId
         );
         emit NFTcanceled(
@@ -322,6 +318,5 @@ contract NFTMartketplace is
     }
 }
 
-// proxy contract --- 0x9f50be47c34e5cc6a27b0ec885ecec4335a95740
-// implementation contract ---- 0x0aD767bA7A119A941840f43e34C1DD3756617C5D
-
+// proxy contract --- 0xf0e4600fBb40F79c20C876a20FDD6f56074F028D
+// implementation contract ---- 0xbF6F998E0508CAcd8Ccf55388a301CAa1E24e3dD
