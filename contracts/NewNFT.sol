@@ -28,7 +28,7 @@ contract NewNFT is ERC721, ERC2981, Ownable {
         _safeMint(msg.sender, tokenId);
         listURI(_uri,tokenId);
         setApprovalForAll(_marketplaceAddress,true);
-        _setTokenRoyalty(tokenId,msg.sender,_feeNumotor); // 10% == 1000 
+        _setTokenRoyalty(tokenId,msg.sender,_feeNumotor); // 10% == 1000
         // _feeDomit 10000 
     }
 
@@ -71,4 +71,4 @@ contract NewNFT is ERC721, ERC2981, Ownable {
 
 }
 
-// Contract Address ---- 0x6bBD0c46383Ef8439a487A58b99224d9305b3108
+// Contract Address ---- 0x414B0EBdE26867fBBe08Cae6E7bfD4Aeb75dd74f
