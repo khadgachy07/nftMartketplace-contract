@@ -27,8 +27,8 @@ contract NFTMartketplace is
     CountersUpgradeable.Counter private _nftCanceled;
 
 
-    bytes32 private constant OPERATOR_ROLE = keccak256("OPERATOR_ROLE");
 
+    bytes32 private constant OPERATOR_ROLE = keccak256("OPERATOR_ROLE"); 
     uint256 public listingFee;
 
     enum State {
@@ -36,6 +36,7 @@ contract NFTMartketplace is
         Cancelled,
         Sold
     }
+
 
     struct NFT {
         uint256 marketItemId;
@@ -70,6 +71,7 @@ contract NFTMartketplace is
         State nftState
     );
 
+
     event NFTsold(
         uint256 marketItemId,
         address nftAddress,
@@ -81,8 +83,27 @@ contract NFTMartketplace is
         State nftState
     );
 
+
+    struct NFTauction{
+        uint256 auctionItem;
+        address nftAddress;
+        uint256 tokenId;
+        address auctionedBy;
+        uint256 startingPrice;
+        uint256 auctionedAt;
+        uint256 auctionedEndAt;
+        address previousBidder;
+        address highestBidder;
+        uint256 previousBid;
+        uint256 highestBid;
+    }
+
     mapping(uint256 => NFT) public NFTs;
     mapping(address => mapping(uint256 => bool)) public forSale;
+
+    CountersUpgradeable.Counter private _nftAuctioned;
+
+    mapping(uint256 => NFTauction) public nftInAuction;
 
     modifier checkInSale(address nftAddress, uint256 tokenId) {
         require(
@@ -136,7 +157,7 @@ contract NFTMartketplace is
         _grantRole(OPERATOR_ROLE, _operator);
     }
 
-    function removeOperator(address _operator)
+    function removeOperator (address _operator)
         public
         onlyRole(DEFAULT_ADMIN_ROLE)
     {
@@ -165,7 +186,51 @@ contract NFTMartketplace is
     }
 
  
+    function auctionNFT(address _nftAddress,uint256 _tokenId,uint256 _price) public notInSalenMustBeOwner(_nftAddress, _tokenId){
+        _nftAuctioned.increment();
+        uint256 newItem = _nftAuctioned.current();
+        nftInAuction[newItem] = NFTauction(
+            newItem,
+            _nftAddress,
+            _tokenId,
+            msg.sender,
+            _price,
+            block.timestamp,
+            0,
+            address(0),
+            address(0),
+            0,
+            0
+        );
+        IERC721Upgradeable(_nftAddress).transferFrom(msg.sender,address(this),_tokenId);
+    }
 
+    function bidforNFT(uint _auctionedItem)public payable {
+        NFTauction memory nft = nftInAuction[_auctionedItem];
+        require(msg.sender != nft.auctionedBy,"Participant cannot bid for their own auctioned NFT");
+        require(msg.value > nft.highestBid && msg.value > nft.startingPrice,"Participant need to bid more than pervious bid");
+        require(nft.auctionedEndAt == 0,"Auction has alrerady ended");
+        if(nft.highestBidder != address(0)){
+            nft.previousBidder = nft.highestBidder; // 
+            nft.previousBid = nft.highestBid;
+        }
+        nft.highestBidder = msg.sender;
+        nft.highestBid = msg.value; 
+        nftInAuction[_auctionedItem] = nft;
+        if(nft.previousBid != 0){
+            payable(nft.previousBidder).transfer(nft.previousBid);
+        }
+    }
+
+    function endAuction(uint _auctionedItem) public payable {
+        NFTauction memory nft = nftInAuction[_auctionedItem];
+        require(nft.auctionedBy == msg.sender,"You must be owner of this NFT to end this auction");
+        require(nft.auctionedEndAt == 0,"This auction has alrerady ended");
+        nft.auctionedEndAt = block.timestamp;
+        nftInAuction[_auctionedItem] = nft;
+        payable(msg.sender).transfer(nft.highestBid);
+        IERC721Upgradeable(nft.nftAddress).transferFrom(address(this),nft.highestBidder,nft.tokenId);
+    }
 
     function listNFTforSale(
         address _nftAddress,
@@ -182,15 +247,15 @@ contract NFTMartketplace is
             _tokenId,
             _creator,
             msg.sender,
-            address(0),
+            address(0), //
             tokenPrice,
             State.Listed
         );
         forSale[_nftAddress][_tokenId] = true;
         IERC721Upgradeable(_nftAddress).transferFrom(
-            msg.sender,
-            address(this),
-            _tokenId
+            msg.sender,  // from
+            address(this), // --- contract'
+            _tokenId // tokenId
         );
         emit NFTlisted(
             newItemId,
@@ -221,7 +286,7 @@ contract NFTMartketplace is
         NFTs[_marketItemId] = nft;
         forSale[_nftAddress][nft.tokenId] = false;
         IERC721Upgradeable(_nftAddress).transferFrom(
-            address(this),
+            address(this), // from
             nft.seller,
             nft.tokenId
         );
@@ -258,7 +323,7 @@ contract NFTMartketplace is
             nft.tokenId,
             nft.price
         );
-        payable(nft.seller).transfer(nft.price - royalAmount);
+        payable(nft.seller).transfer(nft.price);
         payable(nft.creator).transfer(royalAmount);
         IERC721Upgradeable(_nftAddress).transferFrom(
             address(this),
@@ -319,4 +384,5 @@ contract NFTMartketplace is
 }
 
 // proxy contract --- 0xf0e4600fBb40F79c20C876a20FDD6f56074F028D
-// implementation contract ---- 0xbF6F998E0508CAcd8Ccf55388a301CAa1E24e3dD
+// implementation contract ---- 0x5cb5b7Df6d0C6B14326F32Ca9c876a051b3909dE
+
